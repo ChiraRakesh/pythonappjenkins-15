@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         VENV_DIR = "venv"
-        DOCKER_IMAGE = "chirarakesh/pythonappjenkins-15"
+        DOCKER_IMAGE = "chirarakesh/pythonappjenkins-15:latest"
     }
 
     stages {
@@ -54,28 +54,30 @@ pipeline {
             steps {
                 echo '🐳 Building Docker image...'
                 sh """
-                    docker build -t ${DOCKER_IMAGE}:latest .
+                    docker build -t ${DOCKER_IMAGE} .
                 """
             }
         }
 
-         stage('Push to DockerHub') {
+        stage('Push to DockerHub') {
             steps {
                 echo '🚀 Logging in and pushing Docker image...'
+                // Make sure you have a Jenkins credential with ID 'dockerhub-token'
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push $DOCKER_IMAGE
-                    '''
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}
+                    """
                 }
             }
         }
+
         stage('Deploy Container') {
             steps {
                 echo '🚢 Deploying container locally...'
                 sh """
                     docker rm -f flask-container || true
-                    docker run -d -p 5000:5000 --name flask-container ${DOCKER_IMAGE}:latest
+                    docker run -d -p 5000:5000 --name flask-container ${DOCKER_IMAGE}
                 """
             }
         }

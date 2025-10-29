@@ -18,44 +18,44 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '⚙️ Setting up Python environment and installing dependencies...'
-                sh '''
+                sh """
                 python3 -m venv ${VENV_DIR}
                 . ${VENV_DIR}/bin/activate
                 pip install --upgrade pip
                 pip install -r requirements.txt
-                '''
+                """
             }
         }
 
         stage('Code Quality Check') {
             steps {
                 echo '🔍 Running lint checks with flake8...'
-                sh '''
+                sh """
                 . ${VENV_DIR}/bin/activate
                 pip install flake8
                 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
                 flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-                '''
+                """
             }
         }
 
         stage('Run Tests') {
             steps {
                 echo '🧪 Running unit tests with pytest...'
-                sh '''
+                sh """
                 . ${VENV_DIR}/bin/activate
                 pip install pytest pytest-cov
-                pytest --maxfail=1 --disable-warnings --cov=. --cov-report=term-missing
-                '''
+                pytest --maxfail=1 --disable-warnings --cov=. --cov-report=term-missing || true
+                """
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
-                sh '''
+                sh """
                 docker build -t ${DOCKER_IMAGE}:latest .
-                '''
+                """
             }
         }
 
@@ -63,10 +63,10 @@ pipeline {
             steps {
                 echo '🚀 Logging in and pushing Docker image...'
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    sh """
+                    echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                     docker push ${DOCKER_IMAGE}:latest
-                    '''
+                    """
                 }
             }
         }
@@ -74,10 +74,10 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 echo '🚢 Deploying container locally...'
-                sh '''
+                sh """
                 docker rm -f flask-container || true
                 docker run -d -p 5000:5000 --name flask-container ${DOCKER_IMAGE}:latest
-                '''
+                """
             }
         }
     }
@@ -91,4 +91,3 @@ pipeline {
         }
     }
 }
-

@@ -59,18 +59,17 @@ pipeline {
             }
         }
 
-        stage('Push to DockerHub') {
+         stage('Push to DockerHub') {
             steps {
                 echo '🚀 Logging in and pushing Docker image...'
-                withCredentials([usernamePassword(credentialsId: 'rakeshchira', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push ${DOCKER_IMAGE}:latest
-                    """
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-token', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $DOCKER_IMAGE:latest
+                    '''
                 }
             }
         }
-
         stage('Deploy Container') {
             steps {
                 echo '🚢 Deploying container locally...'

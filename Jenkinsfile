@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         VENV_DIR = "venv"
-        DOCKER_IMAGE = "chirarakesh/pythonappjenkins-15:latest"
+        DOCKER_IMAGE = "rakeshchira/pythonappjenkins-15"
     }
 
     stages {

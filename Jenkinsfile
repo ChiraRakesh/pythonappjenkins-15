@@ -1,32 +1,48 @@
 pipeline {
     agent any
 
+    environment {
+        VENV_DIR = "venv"
+        PYTHON = "python3"
+    }
+
     stages {
+        stage('Checkout') {
+            steps {
+                echo "📥 Pulling code from GitHub..."
+                checkout scm
+            }
+        }
+
         stage('Build') {
             steps {
-                sh 'echo Building...'
+                echo "🏗️ Setting up Python virtual environment..."
+                sh '''
+                ${PYTHON} -m venv ${VENV_DIR}
+                . ${VENV_DIR}/bin/activate
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Test') {
             steps {
-                sh 'echo Testing...'
-            }
-        }
-
-        stage('Dockerize') {
-            steps {
+                echo "🧪 Running tests with pytest..."
                 sh '''
-                docker build -t myflaskapp .
-                docker images
+                . ${VENV_DIR}/bin/activate
+                pytest --maxfail=1 --disable-warnings --cov=. --cov-report=term-missing
                 '''
             }
         }
+    }
 
-        stage('Deploy') {
-            steps {
-                sh 'docker run -d -p 5000:5000 myflaskapp'
-            }
+    post {
+        success {
+            echo "✅ Tests passed successfully!"
+        }
+        failure {
+            echo "❌ Build or tests failed!"
         }
     }
 }
